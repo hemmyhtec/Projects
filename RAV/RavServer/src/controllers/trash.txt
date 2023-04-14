@@ -1,0 +1,222 @@
+ async findAll (req, res) {
+      try {
+        const profile = await Profile.findAll({
+          attributes: {exclude: ['password']},
+          limit: 10
+        })
+        res.send(profile)
+        console.log(profile)
+    }catch (err) {
+        console.log(err)
+        res.status(500).send({
+            error: 'An Error has occured trying to fetching'
+        }),console.log(err)
+    }
+    }
+    async update (req, res) {
+        const id = req.params.id
+
+        Profile.update(req.body, {
+          where: { id: id }
+        })
+          .then(num => {
+            if (num == 1) {
+              res.send({
+                message: "Profile was updated successfully."
+              });
+            } else {
+              res.send({
+                message: `Cannot update Profile with id=${id}. Maybe Profile was not found or req.body is empty!`
+              });
+            }
+          })
+          .catch(err => {
+            res.status(500).send({
+              message: "Error updating Profile with id=" + id
+            });
+            console.log(err)
+          });
+    },
+    async delete (req, res) {
+        const id = req.params.id;
+
+        Profile.destroy({
+          where: { id: id }
+        })
+          .then(num => {
+            if (num == 1) {
+              res.send({
+                message: "Profile was deleted successfully!"
+              });
+            } else {
+              res.send({
+                message: `Cannot delete Profile with id=${id}. Maybe Profile was not found!`
+              });
+            }
+          })
+          .catch(err => {
+            res.status(500).send({
+              message: "Could not delete Profile with id=" + id
+            });
+            console.log(err)
+          });
+    },
+    async createPost (req, res, ProfileId) {
+        const file = req.file
+        // const ProfileId = req.params.ProfileId
+        try {
+            const post = new Post ({
+              file: file.filename,
+              posts: req.body.posts,
+              ProfileId: ProfileId
+            })
+            const result = await post.save()
+            res.send(result.toJSON())
+            console.log(post)
+          res.status(201).json({ message: "Post upload!" });
+          } catch (error) {
+            console.log(error)
+            return res.status(500).send({ error: 'Something went wrong' });
+          }
+    },
+    async upload (req, res) {    
+      const id = req.params.id
+        await Profile.update(req.file, {
+            where: {
+              id: id
+            }
+          })
+          // console.log(req.file)
+          .then(num => {
+            if (num == 1) {
+              res.send({
+                message: "Profile was updated successfully."
+              });
+            } else {
+              res.status(500).send({
+                message: `Cannot update Profile with id=${id}. Maybe Profile was not found or req.body is empty!`
+              });
+            }
+          })
+          .catch(err => {
+            res.status(500).send({
+              message: "Error updating Profile with id=" + id
+            });
+            console.log(err)
+          });
+        }
+
+module.exports = (sequelize, Sequelize) => {
+  const User = sequelize.define ("User", {
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false
+    }
+  })
+  User.associate = models => {
+    User.hasMany(modes.Post, {
+      onDelete: "casacade"
+    })
+    User.hasOne(modes.Profile, {
+      onDelete: "casacade"
+    })
+  
+  }
+  return User;
+}
+
+Profile.associate = models => {
+  Profile.belongTo(models.User, {
+    foreignKey: {
+      allowNull: false
+    }
+  })
+}
+Post.associate = models => {
+  Post.belongTo(models.User, {
+    foreignKey: {
+      allowNull: false
+    }
+  })
+}
+
+include: [db.Profile, db.Post]
+
+
+const storage = multer.diskStorage({
+          destination: function(req, file, cb) {
+            // fs.mkdir('../uploads/', (err) => {
+              cb(null, './public/images/')
+              // console.log(err)
+            
+          },
+
+          filename: function(req, file, cb) {
+            cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
+          }
+        })
+        const fileFilter = (req, file, cb) => {
+          if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+            cb(null, true)
+          } else {
+            cb(null, false)
+            const error = new Error('Wrong File, only image are allowed')
+            console.log(error)
+          }
+        }
+        const upload = multer({
+          storage: storage,
+          limits: {
+            fileSize: 1024 * 1024 * 5
+          },
+          fileFilter: fileFilter
+        })
+
+          async createMentor(req, res) {
+    const file = req.file;
+    try {
+      if(file == undefined) {
+        return res.send('You must select a file.')
+      }
+      const mentorprofile = new MentorProfile({
+        type: file.mimetype,
+        file: file.originalname,
+        data: fs.readFileSync(
+          __dirname + "./public/images/" + file.filename
+        ),
+        profession: req.body.profession,
+        about: req.body.about,
+        years_exp: req.body.years_exp,
+        name: req.body.name,
+        email: req.body.email,
+        number: req.body.number,
+        password: req.body.password,
+        role: req.body.role,
+      });
+      const result = await mentorprofile.save();
+      res.send(result.toJSON());
+      console.log(mentorprofile);
+      const resultJson = result.toJSON();
+      res.send({
+        result: resultJson,
+        token: jwtSignmentor(resultJson),
+      });
+      res
+        .status(201)
+        .json({ message: "Good Job!, Your Account is Successfully Created" });
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(500)
+        .send({ error: "Oops! This email account is already in use..." });
+    }
+  },
+   const storage = multer.diskStorage({
+          destination: (req, file, cb) => {
+            cb(null, __dirname + "./public/images/")
+          },
+          filename: (req, file, cb) => {
+            cb(null, `${Date.now()}-hemmyhtec-${file.originalname}`)
+          }
+        })
+        const uploadFile = multer( { storage: storage, fileFilter: imageFilter}) 
